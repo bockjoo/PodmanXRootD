@@ -4,7 +4,7 @@ Bockjoo Kim, August 24, 2023
 
 
 ## [1] Introduction
-This is the doocumentation on an XRootD deployment in the Florida CMS Tier2</b>
+This doocumentation describes a procedure a podman based XRootD deployment for the Florida CMS Tier2.
 
 ## [2] Preparing the Machine for the XRootD podman Needs Privileged Actions: Puppetization
 ### [2-1] Hardware and OS

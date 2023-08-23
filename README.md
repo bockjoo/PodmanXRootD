@@ -17,7 +17,7 @@ For this documentation, two VMs are used to evaluate the podman solution.
 <pre>
 <b>A. Explannation</b>
 podman, podman-compose, buildah, and fuse-overlayfs are the primary packages needed.
-The others are either automatic subsidiary packages or something convenience packages.
+The others are either automatic subsidiary packages or convenience packages.
 <b>B. In Puppet, something like is needed: </b>
 yum -y install podman btrfs-progs-devel conmon containernetworking-plugins  \
        containers-common crun device-mapper-devel git glib2-devel glibc-devel \

@@ -131,7 +131,7 @@ Correspondg users in the username space need to be created to access the Lustre 
 <pre>
 <b> A. Explanation </b>
 It appears the users in the podman user namespace need to exist for the users in the
-podman XRootD container to read and write files to the Lustre, /cmsuf
+podman XRootD container to read and write files in Lustre, /cmsuf
 <b> B. In Puppet, one can do something like:</b>
 See /cmsuf/t2/operations/ftl_create_podman_users.sh
 

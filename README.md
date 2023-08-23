@@ -460,7 +460,7 @@ but the uid does not exist in the host;
        2
 
 <b>
-We need the "mirror image" users, the hostside container users!!!
+We need the "mirror image" users, the hostside container users\!\!\!
 Thus, the need for 
 </b>
 </pre>

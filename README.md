@@ -461,7 +461,7 @@ but the uid does not exist in the host;
 
 <b>
 We need the "mirror image" users, the hostside container users.
-Thus, the need for [2-7] Preparing the podman accounts in the user namespace
+Thus, the need for [2-7] Preparing the podman accounts in the user namespace.
 </b>
 </pre>
 

@@ -459,8 +459,14 @@ but the uid does not exist in the host;
        [bockjoo@cmspodman1 ~]$ echo $?
        2
 
-<b> We need the "mirror image" users, the hostside container users!!! </b>       
+<b>
+We need the "mirror image" users, the hostside container users!!!
+Thus, the need for 
+</b>
 </pre>
+### [2-7] Preparing the podman accounts in the user namespace
+
+
 ### [6-2] Container Stops after Logout 
 <pre>
 Tried --restart always or nohup but didn't work

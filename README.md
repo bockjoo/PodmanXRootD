@@ -412,6 +412,7 @@ Copying davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list   [DON
 -rwxr-xr-x 1 bockjoo avery 27150 Aug 21 20:08 sitedb.list
 </pre>
 
+
 ## [5] A Plan for the Migration from /cmsuf/data(accessible through the regular xrootd) to /cmsuf/podman/data(accessible through the contained xrootd)
 <pre>
   In prepration
@@ -470,4 +471,9 @@ Thus, the need for [2-7] Preparing the podman accounts in the user namespace.
 <pre>
 Tried --restart always or nohup but didn't work
 Does this issue exist on a non-VM host? The container in a physical machine did not show this issue.
+</pre>
+
+## [7] Testing in the production-like host
+<pre>
+       All of the road bocks above should be cleared
 </pre>

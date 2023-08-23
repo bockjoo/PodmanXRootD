@@ -195,7 +195,7 @@ podman image rm $(podman images | grep xrootd_server | awk '{print $3}')
 buildah bud -f Dockerfile.Systemd -t xrootd_server
 </pre>
 ### [3-3] Starting the XRootD Server in the Podman Container
-#### [3-1] One time setup
+#### [3-1] One time setup in each podman machine
 <pre>
 # XRootD configurations
 if [ ! -d /opt/cms/etc/xrootd ] ; then

@@ -159,7 +159,7 @@ for p in podman podman-compose buildah fuse-overlayfs ; do
     printf "$rpm_qa\n" | grep $p
 done
 
-[3-1-3] cgroup2fs : # RC
+[3-1-3] It should support cgroup2fs
 stat -fc %T /sys/fs/cgroup/
 
 [3-1-4] There should be non-zero username space

@@ -460,11 +460,10 @@ but the uid does not exist in the host;
        2
 
 <b>
-We need the "mirror image" users, the hostside container users\!\!\!
-Thus, the need for 
+We need the "mirror image" users, the hostside container users.
+Thus, the need for [2-7] Preparing the podman accounts in the user namespace
 </b>
 </pre>
-### [2-7] Preparing the podman accounts in the user namespace
 
 
 ### [6-2] Container Stops after Logout 

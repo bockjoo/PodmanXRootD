@@ -11,6 +11,7 @@ This doocumentation describes a procedure for a podman based XRootD deployment a
 <pre>
 cmsio machines can be used as the host machines.
 RHEL8 or RHEL9 host needs to be prepared.
+For this documentation, two VMs are used to evaluate the podman solution.
 </pre>
 ### [2-2] Package Installation
 <pre>

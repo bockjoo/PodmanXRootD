@@ -417,7 +417,51 @@ Copying davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list   [DON
   In prepration
 </pre>
 ## [6] Troubleshooting
-### [6-1] Container Stops after Logout 
+### [6-1] Users in the user namespace (high UID/GID users) should exist to read/write files to /cmsuf/podman/data/store/? area
+<pre>
+
+The user, bockjoo, inside the container is
+       [bockjoo@cmspodman1 ~]$ podman exec -it ${container_id} id bockjoo
+       uid=4575(bockjoo) gid=5000(avery) groups=5000(avery)
+       
+Starting uid/gid in the username space is 
+       [bockjoo@cmspodman1 ~]$ grep bockjoo /etc/subuid | cut -d: -f2
+       558752
+       [bockjoo@cmspodman1 ~]$ grep bockjoo /etc/subgid | cut -d: -f2
+       558752
+
+The user uid/gid in the host for the contained user bockjoo would be:
+       563326(=558752 + 4575 - 1)/563751(558752 + 5000 - 1)
+
+The contained user, bockjoo, can see the CMS storage directory /cmsuf/podman/data/store:
+       [bockjoo@cmspodman1 ~]$  podman exec -it ${container_id} su - bockjoo -c "ls /cmsuf/podman/data/store"
+       backfill  local  temp  user
+because 
+       [bockjoo@cmspodman1 ~]$ stat -c %U:%G /cmsuf/podman/data/store/user/bockjoo
+       podman:podman
+The corresponding user, podman, in the host exist:
+       [bockjoo@cmspodman1 ~]$ id podman
+       uid=563326(podman) gid=563751(podman) groups=563751(podman)
+
+On the other hand, the user, cmsprod, inside the container is
+       [bockjoo@cmspodman1 ~]$ podman exec -it ${container_id} id cmsprod
+       uid=723(cmsprod) gid=5001(cmsdata) groups=5001(cmsdata)
+       
+This user fails to see /cmsuf/podman/data/store/user/bockjoo:
+       [bockjoo@cmspodman1 ~]$ podman exec -it ${container_id} su - cmsprod -c "ls /cmsuf/podman/data/store"
+       ls: cannot access '/cmsuf/podman/data/store': Permission denied
+       
+This is because the corresponding user to the contained user, cmsprod, does not exist in the host:
+The uig/gid of the contained user, cmsprod, in the host would be;
+       559474(=558752 + 723 - 1)/563752(558752 + 5001 - 1)
+but the uid does not exist in the host;
+       [bockjoo@cmspodman1 ~]$ getent passwd 559474
+       [bockjoo@cmspodman1 ~]$ echo $?
+       2
+
+<b> We need the "mirror image" users, the hostside container users!!! </b>       
+</pre>
+### [6-2] Container Stops after Logout 
 <pre>
 Tried --restart always or nohup but didn't work
 Does this issue exist on a non-VM host? The container in a physical machine did not show this issue.

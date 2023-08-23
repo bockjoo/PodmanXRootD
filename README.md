@@ -85,7 +85,7 @@ systemctl reboot
 <pre>
 <b>A long explanation</b>
 If the main podman user home directory is mounted on an NFS, it is not capable of overlayfs.
-There are a multiple way of doing this.
+There is a multiple way of doing this, i.e., preparing the container storage to store images, etc.
 One is configuring graphroot parameter in ~/.config/containers/storage.conf
 Another is symlinking ~/.local/share/containers to a disk is local to the machine.
 Here's the second method assuming the main podman user is bockjoo:

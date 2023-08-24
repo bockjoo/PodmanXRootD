@@ -415,7 +415,11 @@ Copying davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list   [DON
 
 ## [5] A Plan for the Migration from /cmsuf/data(accessible through the regular xrootd) to /cmsuf/podman/data(accessible through the contained xrootd)
 <pre>
-  In prepration
+The overall picture of the migration will follow these steps:
+1) would disable writes to your RSE/Lustre(T2_US_Florida) storage (A CMS thing)
+2) you would copy all the data from /cmsuf/data/store to /cmsuf/podman/data/store
+3) then update storage.json (PhEDEx/storage.xml and JobConfig/site-local-config.xml) with new /cmsuf/podman/data/store
+4) re-enable writes to your RSE/Lustre storageT2_US_Florida)
 </pre>
 ## [6] Troubleshooting
 ### [6-1] Users in the user namespace (high UID/GID users) should exist to read/write files to /cmsuf/podman/data/store/? area

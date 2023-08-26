@@ -781,7 +781,8 @@ export X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
 export X509_USER_PROXY=/home/bockjoo/.cmsuser.proxy
 export X509_USER_PROXY_NONCMS=/home/bockjoo/.griduser.proxy
 export SAME_SENSOR_HOME=/opt/cms/services/T2/ops/cmssam/SiteTests/testjob
-#export PYTHONPATH=$PYTHONPATH:$SAME_SENSOR_HOME/../SRMv2/tests/nap
+export SAME_SENSOR_HOME=/cmsuf/t2/operations/opt/cms/services/T2/ops/cmssam/SiteTests/testjob
+export PYTHONPATH=$PYTHONPATH:$SAME_SENSOR_HOME/../SRMv2/tests/nap
 # The reference test
 (
    cd $SAME_SENSOR_HOME/../SRMv2/tests/nap

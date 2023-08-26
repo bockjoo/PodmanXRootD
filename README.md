@@ -310,19 +310,25 @@ podman exec -it ${container_id} systemctl restart cmsd@clustered.service
 # <FONT color='red'><b>The script will fail if the accounts in the Section [2-7] do not exist</b></FONT>
 </pre>
 ## [4] Tests with Possible Use Cases
-#### check with xrdmapc behavior with the server
+### Inpections with the container
 <pre>
-[bockjoo@cms server]$ xrdmapc --list all cmspodman1.rc.ufl.edu:1094 
-0**** cmspodman1.rc.ufl.edu:1094
-      Srv cmspodman1.ufhpc:1094
+podman exec -it ${container_id} ps auxwww # To check the xrootd/cmsd processes are running
+podman exec -it ${container_id} /bin/bash # To inpect the container interactively
 </pre>
-#### check with xrdmapc behavior with the redirector
+### [4-1] check with xrdmapc and xrdfs behavior, a.k.a. AAA in CMS
 <pre>
-[bockjoo@cms server]$ xrdmapc --list all cmspodman2.rc.ufl.edu:1094 
-0**** cmspodman2.rc.ufl.edu:1094
-      Srv cmspodman1.rc.ufl.edu:1094
+xrdmapc --list all cmspodman1.rc.ufl.edu:1094 
+xrdmapc --list all cmspodman2.rc.ufl.edu:1094 
+
+xrdfs cmspodman1.rc.ufl.edu:1094 query config version
+xrdfs cmspodman2.rc.ufl.edu:1094 query config version
+
+xrdfs cmspodman2.rc.ufl.edu:1094 ls -l /store
+xrdfs cmspodman2.rc.ufl.edu:1094 locate /store/mc/SAM/GenericTTbar/AODSIM/CMSSW_9_2_6_91X_mcRun1_realistic_v2-v1/00000/A64CCCF2-5C76-E711-B359-0CC47A78A3F8.root
 </pre>
-### xrdcp upload
+
+### [4-2] Test for the /store/user read/write (user bockjoo)
+#### xrdcp upload
 <pre>
 
 # For some reason, there was the permission denied error initially ( Morning of Aug 21, but it became successful Afternoon of Aug 21 )
@@ -396,22 +402,164 @@ sec.protocol /usr/lib64 ztn
 
 </pre>
 ##### xrdcp download
-[bockjoo@cms ~]$ export XrdSecPROTOCOL="ztn,unix" ; xrdcp -d 1 -f root://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list?authz=Bearer%20$BEARER_TOKEN ./ 
-[2023-08-21 20:04:31.108354 -0400][Info   ][AsyncSock         ] [cmspodman2.rc.ufl.edu:1094.0] TLS hand-shake done.
-[2023-08-21 20:04:31.122071 -0400][Info   ][AsyncSock         ] [cmspodman1.rc.ufl.edu:1094.0] TLS hand-shake done.
-[26.51kB/26.51kB][100%][==================================================][26.51kB/s]  
-[bockjoo@cms ~]$ ls -al sitedb.list 
--rwxr-xr-x 1 bockjoo avery 27150 Aug 21 20:04 sitedb.list
+mdYHMS=$(date +%b%d%Y+%H+%M+%S)
+xrdcp -d 1 -f file://`pwd`/sitedb.list root://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS
+( 
+   eval `oidc-agent`
+   oidc-add bockjoo_xrd
+   export BEARER_TOKEN=$(oidc-token --scope=offline_access --scope=storage.read:/ --time=3600 bockjoo_xrd)
+   export XrdSecPROTOCOL="ztn,unix"
+   xrdcp -d 1 -f root://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS?authz=Bearer%20$BEARER_TOKEN ./
+)
+ls -al sitedb.list_$mdYHMS 
+/usr/bin/python3 $(which gfal-ls) davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS
+/usr/bin/python3 $(which gfal-rm) davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS
+rm -f sitedb.list_$mdYHMS 
 
 
 ##### gfal-copy download (upload does not work as I can not get the storage.write:/ scope)
 <pre>
-[bockjoo@cms ~]$ export XrdSecPROTOCOL="ztn,unix" ; /usr/bin/python3 $(which gfal-copy) -f davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list ./
-Copying davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list   [DONE]  after 0s                 
-[bockjoo@cms ~]$ ls -al sitedb.list 
--rwxr-xr-x 1 bockjoo avery 27150 Aug 21 20:08 sitedb.list
+mdYHMS=$(date +%b%d%Y+%H+%M+%S)
+xrdcp -d 1 -f file://`pwd`/sitedb.list root://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS
+( 
+   eval `oidc-agent`
+   oidc-add bockjoo_xrd
+   export BEARER_TOKEN=$(oidc-token --scope=offline_access --scope=storage.read:/ --time=3600 bockjoo_xrd)
+   export XrdSecPROTOCOL="ztn,unix"
+   /usr/bin/python3 $(which gfal-copy) -f davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS ./
+ls -al sitedb.list_$mdYHMS
+)
+
+/usr/bin/python3 $(which gfal-ls) davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS
+/usr/bin/python3 $(which gfal-rm) davs://cmspodman2.rc.ufl.edu:1094//store/user/bockjoo/sitedb.list_$mdYHMS
+rm -f sitedb.list_$mdYHMS 
+</pre>
+### [4-3] Role Based Tests (cmsprod)
+#### Change the grid-mapfile for the role
+<pre>
+sed -i 's|"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bockjoo/CN=556538/CN=Bockjoo Kim" bockjoo|#"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bockjoo/CN=556538/CN=Bockjoo Kim" bockjoo|' /opt/cms/etc/grid-security/grid-mapfile
+grep Bockjoo /opt/cms/etc/grid-security/grid-mapfile
 </pre>
 
+#### Restart the Container, Thus XRootD
+<pre>
+podman stop $container_id
+container_id=$(podman run -d --rm --name xrootd_server \
+               --cgroup-manager=cgroupfs --tmpfs /tmp \
+               --tmpfs /run \
+               -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+               -v /opt/cms/etc/xrootd/:/etc/xrootd/:ro \
+               -v /opt/cms/etc/grid-security/grid-mapfile:/etc/grid-security/grid-mapfile:ro \
+               -v /opt/cms/etc/grid-security/ban-mapfile:/etc/grid-security/ban-mapfile:ro \
+               -v /opt/cms/etc/grid-security/voms-mapfile:/etc/grid-security/voms-mapfile:ro \
+               -v /opt/cms/etc/grid-security/hostcert.pem:/etc/grid-security/hostcert.pem:ro \
+               -v /opt/cms/etc/grid-security/hostkey.pem:/etc/grid-security/hostkey.pem:ro \
+               -v /opt/cms/etc/grid-security/xrd/:/etc/grid-security/xrd:rw \
+               -v /opt/cms/etc/sysconfig/xrootd:/etc/sysconfig/xrootd:ro \
+               -v /opt/cms/etc/systemd/system/xrootd-privileged@.service:/etc/systemd/system/xrootd-privileged@.service:ro \
+               -v /opt/cms/etc/systemd/system/cmsd@.service:/etc/systemd/system/cmsd@.service:ro \
+               -v /opt/cms/etc/hosts:/etc/hosts:rw \
+               -v /opt/cms/etc/hostname:/etc/hostname:rw \
+               -v /opt/cms/etc/systemd/system/systemd-hostnamed.service.d/:/etc/systemd/system/systemd-hostnamed.service.d/:ro \
+               -v /opt/cms/etc/selinux/config:/etc/selinux/config:rw \
+               -v /opt/cms/podman/:/opt/cms/podman/:rw \
+               -v /opt/cms/store/:/opt/cms/store/:rw \
+               -v /opt/cms/etc/SITECONF/:/etc/SITECONF/:ro \
+               -v /cmsuf/:/cmsuf/:rw \
+               --systemd=true --network=host --cgroup-manager=systemd localhost/xrootd_server:latest)
+#### Check the proxy has phedex or production role for cmsprod
+<pre>
+source /cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/current/el$(source /cvmfs/cms.cern.ch/cmsset_default.sh ; cmsos| cut -d_ -f1 | sed 's#[a-z]\|[A-Z]##g')-x86_64/setup.sh
+export X509_USER_PROXY=$X509_USER_PROXY_NONCMS
+export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy
+voms-proxy-info -fqan
+</pre>
+#### xrdmapc and xrdfs with the role
+<pre>
+(
+   export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy
+   xrdfs cmspodman1.rc.ufl.edu:1094 query config version
+   xrdfs cmspodman2.rc.ufl.edu:1094 query config version
+   xrdfs cmspodman1.rc.ufl.edu:1094 query config version
+   xrdfs cmspodman2.rc.ufl.edu:1094 query config version
+   xrdfs cmspodman2.rc.ufl.edu:1094 ls /store
+)
+# on the podman machine with the xrootd server
+podman exec -it $container_id tail -50 /var/log/xrootd/clustered/xrootd.log | grep bockjoo | grep "login as"
+       
+(    
+       export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy ; 
+       xrdfs cmspodman1.rc.ufl.edu:1094 locate  /store/mc/SAM/GenericTTbar/AODSIM/CMSSW_9_2_6_91X_mcRun1_realistic_v2-v1/00000/A64CCCF2-5C76-E711-B359-0CC47A78A3F8.root ; 
+)
+</pre>
+
+#### xrdcp upload and remove the file
+<pre>
+/home/bockjoo/.cmssoft/phedex_proxy is mapped to cmsprod account in the container
+</pre>
+<pre>
+# on the client
+(
+   mdYHMS=$(date +%b%d%Y+%H+%M+%S)
+   export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy
+   xrdcp -d 1 -f file://`pwd`/sitedb.list root://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+   ls -al /cmsuf/podman/data/store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+   /usr/bin/python3 $(which gfal-ls) davs://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+)
+
+# on the podman machine
+mdYHMS=Aug242023+21+18+01
+podman exec -it $container_id ls -al /cmsuf/podman/data/store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+
+# on the client
+(
+   mdYHMS=Aug242023+21+18+01
+   export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy
+   /usr/bin/python3 $(which gfal-rm) davs://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+
+)
+
+
+
+[bockjoo@cms ~]$ # on the client
+[bockjoo@cms ~]$ (
+>    mdYHMS=$(date +%b%d%Y+%H+%M+%S)
+>    export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy
+>    xrdcp -d 1 -f file://`pwd`/sitedb.list root://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+>    ls -al /cmsuf/podman/data/store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+>    /usr/bin/python3 $(which gfal-ls) davs://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+> )
+[2023-08-24 21:18:37.408742 -0400][Info   ][AsyncSock         ] [cmspodman2.rc.ufl.edu:1094.0] TLS hand-shake done.
+[2023-08-24 21:18:39.835221 -0400][Info   ][AsyncSock         ] [cmspodman1.rc.ufl.edu:1094.0] TLS hand-shake done.
+[26.51kB/26.51kB][100%][==================================================][26.51kB/s]  
+-rw-r--r-- 1 559474 563752 27150 Aug 24 21:18 /cmsuf/podman/data/store/user/rucio/bockjoo/sitedb.list_Aug242023+21+18+37
+davs://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_Aug242023+21+18+37
+
+
+
+
+[bockjoo@cmspodman1 ~]$ # on the podman machine
+[bockjoo@cmspodman1 ~]$ mdYHMS=Aug242023+21+18+01
+[bockjoo@cmspodman1 ~]$ podman exec -it $container_id ls -al /cmsuf/podman/data/store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+-rw-r--r-- 1 cmsprod cmsdata 27150 Aug 25 01:18 /cmsuf/podman/data/store/user/rucio/bockjoo/sitedb.list_Aug242023+21+18+01
+
+
+
+[bockjoo@cms ~]$ # on the client
+[bockjoo@cms ~]$ (
+>    mdYHMS=Aug242023+21+18+01
+>    export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy
+>    /usr/bin/python3 $(which gfal-rm) davs://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_$mdYHMS
+> 
+> )
+davs://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_Aug242023+21+18+01      DELETED
+
+
+</pre>
+### [4-4] Analysis Scenario
+<pre> TO BE WRITTEN </pre>
+### [4-5] Production Scenario
+<pre> TO BE WRITTEN </pre>
 
 ## [5] A Plan for the Migration from /cmsuf/data(accessible through the regular xrootd) to /cmsuf/podman/data(accessible through the contained xrootd)
 <pre>
@@ -420,6 +568,9 @@ The overall picture of the migration will follow these steps:
 2) you would copy all the data from /cmsuf/data/store to /cmsuf/podman/data/store
 3) then update storage.json (PhEDEx/storage.xml and JobConfig/site-local-config.xml) with new /cmsuf/podman/data/store
 4) re-enable writes to your RSE/Lustre storageT2_US_Florida)
+       
+More concretely, turn cmsio2.rc.ufl.edu into a read-only XRootD and 
+cmspodman2.rc.ufl.edu into both read adn write instance of XRootD service       
 </pre>
 ## [6] Troubleshooting
 ### [6-1] Users in the user namespace (high UID/GID users) should exist to read/write files to /cmsuf/podman/data/store/? area

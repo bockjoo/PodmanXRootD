@@ -557,10 +557,249 @@ davs://cmspodman2.rc.ufl.edu:1094//store/user/rucio/bockjoo/sitedb.list_Aug24202
 
 </pre>
 ### [4-4] Analysis Scenario
-<pre> TO BE WRITTEN </pre>
-### [4-5] Production Scenario
-<pre> TO BE WRITTEN </pre>
+#### Change the grid-mapfile for the role cms0001 on cmspodman1 and cmspodman2
+<pre>
+grep -q ^"#\"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bockjoo/CN=556538/CN=Bockjoo Kim\"" /opt/cms/etc/grid-security/grid-mapfile
+if [ $? -eq 0 ] ; then
+   echo INFO Bockjoo Kim DN is commented out in the grid-mapfile
+else
+   sed -i 's|"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bockjoo/CN=556538/CN=Bockjoo Kim" bockjoo|#"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bockjoo/CN=556538/CN=Bockjoo Kim" bockjoo|' /opt/cms/etc/grid-security/grid-mapfile
+fi
+grep Bockjoo /opt/cms/etc/grid-security/grid-mapfile
+</pre>
+#### Restart the Container, Thus XRootD
+<pre>
+podman stop $container_id
+container_id=$(podman run -d --rm --name xrootd_server \
+               --cgroup-manager=cgroupfs --tmpfs /tmp \
+               --tmpfs /run \
+               -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+               -v /opt/cms/etc/xrootd/:/etc/xrootd/:ro \
+               -v /opt/cms/etc/grid-security/grid-mapfile:/etc/grid-security/grid-mapfile:ro \
+               -v /opt/cms/etc/grid-security/ban-mapfile:/etc/grid-security/ban-mapfile:ro \
+               -v /opt/cms/etc/grid-security/voms-mapfile:/etc/grid-security/voms-mapfile:ro \
+               -v /opt/cms/etc/grid-security/hostcert.pem:/etc/grid-security/hostcert.pem:ro \
+               -v /opt/cms/etc/grid-security/hostkey.pem:/etc/grid-security/hostkey.pem:ro \
+               -v /opt/cms/etc/grid-security/xrd/:/etc/grid-security/xrd:rw \
+               -v /opt/cms/etc/sysconfig/xrootd:/etc/sysconfig/xrootd:ro \
+               -v /opt/cms/etc/systemd/system/xrootd-privileged@.service:/etc/systemd/system/xrootd-privileged@.service:ro \
+               -v /opt/cms/etc/systemd/system/cmsd@.service:/etc/systemd/system/cmsd@.service:ro \
+               -v /opt/cms/etc/hosts:/etc/hosts:rw \
+               -v /opt/cms/etc/hostname:/etc/hostname:rw \
+               -v /opt/cms/etc/systemd/system/systemd-hostnamed.service.d/:/etc/systemd/system/systemd-hostnamed.service.d/:ro \
+               -v /opt/cms/etc/selinux/config:/etc/selinux/config:rw \
+               -v /opt/cms/podman/:/opt/cms/podman/:rw \
+               -v /opt/cms/store/:/opt/cms/store/:rw \
+               -v /opt/cms/etc/SITECONF/:/etc/SITECONF/:ro \
+               -v /cmsuf/:/cmsuf/:rw \
+               --systemd=true --network=host --cgroup-manager=systemd localhost/xrootd_server:latest)
 
+</pre>
+#### Check the role cms0001
+<pre>
+# on the client
+xrdfs cmspodman2.rc.ufl.edu:1094 ls /store/user/bockjoo (
+
+# on the podman machine with the xrootd server
+podman exec -it $container_id tail -50 /var/log/xrootd/clustered/xrootd.log | grep bockjoo | grep "login as"
+
+[bockjoo@cms ~]$ xrdfs cmspodman2.rc.ufl.edu:1094 ls /store/user/bockjoo
+/store/user/bockjoo/gfal_copy
+/store/user/bockjoo/sitedb.list_Aug242023+15+55+24
+/store/user/bockjoo/sitedb.list_Aug242023+15+57+16
+/store/user/bockjoo/sitedb.list_Aug242023+17+29+42
+/store/user/bockjoo/sitedb.list_Aug242023+17+35+15
+/store/user/bockjoo/sitedb.list_Aug242023+18+37+11
+/store/user/bockjoo/sitedb.list_Aug242023+18+56+52
+/store/user/bockjoo/sitedb.list_Aug242023+19+12+28
+/store/user/bockjoo/sitedb.list_Aug242023+19+14+08
+/store/user/bockjoo/subdir
+/store/user/bockjoo/subdir1
+
+[bockjoo@cmspodman1 ~]$ podman exec -it $container_id tail -50 /var/log/xrootd/clustered/xrootd.log | grep bockjoo | grep "login as"
+230825 02:46:44 062 XrootdXeq: bockjoo.4066878:39@cms-data pvt IPv4 TLSv1.3 login as cms0001
+
+</pre>
+#### xrdcp upload and remove the file
+<pre>
+# client
+mdYHMS=$(date +%b%d%Y+%H+%M+%S)
+xrdcp -d 1 -f file://`pwd`/sitedb.list root://cmspodman2.rc.ufl.edu:1094//store/temp/user/cms0001.$mdYHMS/sitedb.list_$mdYHMS
+ls -al /cmsuf/podman/data/store/temp/user/cms0001.$mdYHMS/sitedb.list_$mdYHMS
+
+# podman
+mdYHMS=Aug242023+22+51+10
+podman exec -it $container_id  ls -al /cmsuf/podman/data/store/temp/user/cms0001.${mdYHMS}/sitedb.list_${mdYHMS}
+
+
+/usr/bin/python3 $(which gfal-ls) davs://cmspodman2.rc.ufl.edu:1094//store/temp/user/cms0001.$mdYHMS/sitedb.list_$mdYHMS
+/usr/bin/python3 $(which gfal-rm) davs://cmspodman2.rc.ufl.edu:1094//store/temp/user/cms0001.$mdYHMS/sitedb.list_$mdYHMS
+
+</pre>
+
+### [4-5] Production Scenario
+#### [4-5-1] SAM WebDAV Tests
+##### Change the grid-mapfile for the role
+<pre>
+sed -i 's|#"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bockjoo/CN=556538/CN=Bockjoo Kim" bockjoo|"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bockjoo/CN=556538/CN=Bockjoo Kim" bockjoo|' /opt/cms/etc/grid-security/grid-mapfile
+grep Bockjoo /opt/cms/etc/grid-security/grid-mapfile
+</pre>
+
+##### Restart the Container, Thus XRootD
+<pre>
+podman stop $container_id
+container_id=$(podman run -d --rm --name xrootd_server \
+               --cgroup-manager=cgroupfs --tmpfs /tmp \
+               --tmpfs /run \
+               -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+               -v /opt/cms/etc/xrootd/:/etc/xrootd/:ro \
+               -v /opt/cms/etc/grid-security/grid-mapfile:/etc/grid-security/grid-mapfile:ro \
+               -v /opt/cms/etc/grid-security/ban-mapfile:/etc/grid-security/ban-mapfile:ro \
+               -v /opt/cms/etc/grid-security/voms-mapfile:/etc/grid-security/voms-mapfile:ro \
+               -v /opt/cms/etc/grid-security/hostcert.pem:/etc/grid-security/hostcert.pem:ro \
+               -v /opt/cms/etc/grid-security/hostkey.pem:/etc/grid-security/hostkey.pem:ro \
+               -v /opt/cms/etc/grid-security/xrd/:/etc/grid-security/xrd:rw \
+               -v /opt/cms/etc/sysconfig/xrootd:/etc/sysconfig/xrootd:ro \
+               -v /opt/cms/etc/systemd/system/xrootd-privileged@.service:/etc/systemd/system/xrootd-privileged@.service:ro \
+               -v /opt/cms/etc/systemd/system/cmsd@.service:/etc/systemd/system/cmsd@.service:ro \
+               -v /opt/cms/etc/hosts:/etc/hosts:rw \
+               -v /opt/cms/etc/hostname:/etc/hostname:rw \
+               -v /opt/cms/etc/systemd/system/systemd-hostnamed.service.d/:/etc/systemd/system/systemd-hostnamed.service.d/:ro \
+               -v /opt/cms/etc/selinux/config:/etc/selinux/config:rw \
+               -v /opt/cms/podman/:/opt/cms/podman/:rw \
+               -v /opt/cms/store/:/opt/cms/store/:rw \
+               -v /opt/cms/etc/SITECONF/:/etc/SITECONF/:ro \
+               -v /cmsuf/:/cmsuf/:rw \
+               --systemd=true --network=host --cgroup-manager=systemd localhost/xrootd_server:latest)
+
+</pre>
+##### Check bockjoo login as bockjoo
+<pre>
+# on client
+#(
+#   export X509_USER_PROXY=/home/bockjoo/.cmssoft/phedex_proxy
+   xrdfs cmspodman2.rc.ufl.edu:1094 ls /store/user/bockjoo
+#)
+
+# on the podman machine with the xrootd server
+podman exec -it $container_id tail -50 /var/log/xrootd/clustered/xrootd.log | grep bockjoo | grep "login as"
+</pre>
+
+<pre>
+export X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
+export X509_USER_PROXY=/home/bockjoo/.cmsuser.proxy
+export X509_USER_PROXY_NONCMS=/home/bockjoo/.griduser.proxy
+export SAME_SENSOR_HOME=$HOME/cmssam/SiteTests/testjob
+export PYTHONPATH=$PYTHONPATH:$SAME_SENSOR_HOME/../SRMv2/tests/nap
+# The reference test
+(
+   cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+   host=cmsio2.rc.ufl.edu   
+   $SAME_SENSOR_HOME/../SE/se_webdav.py -H ${host} -E ${host}:1094 -X $X509_USER_PROXY -N $X509_USER_PROXY_NONCMS -T RD3PCP /store/mc/SAM/  -T WRDEL3PCP /store/user/bockjoo -C /dev/null  > /opt/cms/services/T2/ops/webdav/runSAMWebDAV.$(echo $host | cut -d. -f1).out 2>&1 
+)
+
+# The WebDAV SAM test on the podman
+(
+   cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+   host=cmspodman2.rc.ufl.edu   
+   $SAME_SENSOR_HOME/../SE/se_webdav_cmspodman2.py -H ${host} -E ${host}:1094 -X $X509_USER_PROXY -N $X509_USER_PROXY_NONCMS -T RD3PCP /store/mc/SAM/  -T WRDEL3PCP /store/user/bockjoo -C /dev/null  > /opt/cms/services/T2/ops/webdav/runSAMWebDAV.$(echo $host | cut -d. -f1).out 2>&1 
+)
+</pre>
+#### [4-5-2] SAM XRootD Tests
+##### Preparation for the xrootd python (maybe unnecessary)
+<pre>
+source /cvmfs/cms.cern.ch/el8_amd64_gcc12/external/cmake/3.25.2-ba1804546854f5a6aa1f118c2f8f4439/etc/profile.d/init.sh
+cd ~/bin
+ln -sf $(which cmake) cmake3
+pip install --upgrade xrootd
+</pre>     
+##### Setting up latest SAM test package
+<pre>
+cd /opt/cms/services/T2/ops/
+git clone https://gitlab.cern.ch/etf/cmssam
+cd cmssam/
+cd SiteTests/SRMv2/tests/
+git clone  https://gitlab.cern.ch:8443/etf/nap
+</pre>
+##### Running the latest WebDAV SAM tests
+<pre>
+export X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
+export X509_USER_PROXY=/home/bockjoo/.cmsuser.proxy
+export X509_USER_PROXY_NONCMS=/home/bockjoo/.griduser.proxy
+export SAME_SENSOR_HOME=/opt/cms/services/T2/ops/cmssam/SiteTests/testjob
+
+# Reference Test with a cmsio machine
+(    
+    cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+    host=cmsio3.rc.ufl.edu
+    $SAME_SENSOR_HOME/../SE/se_webdav_uf.py -d --print-all -H ${host} -E ${host}:1094 -X $X509_USER_PROXY -N $X509_USER_PROXY_NONCMS -T RD3PCP /store/mc/SAM/  -T WRDEL3PCP /store/user/bockjoo// -C /dev/null  > /opt/cms/services/T2/ops/cmssam/se_webdav.$(echo $host | cut -d. -f1).out ; 
+)
+
+# Podman WebDAV test with a podman 
+(    
+    cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+    host=cmspodman2.rc.ufl.edu
+    $SAME_SENSOR_HOME/../SE/se_webdav_uf_podman.py -d --print-all -H ${host} -E ${host}:1094 -X $X509_USER_PROXY -N $X509_USER_PROXY_NONCMS -T RD3PCP /store/mc/SAM/  -T WRDEL3PCP /store/user/bockjoo// -C /dev/null  > /opt/cms/services/T2/ops/cmssam/se_webdav.$(echo $host | cut -d. -f1).out ; 
+)
+</pre>
+##### Running the latest WebDAV SAM tests with token
+###### CMS Token Twiki 
+<pre>
+https://twiki.cern.ch/twiki/bin/view/CMSPublic/XRootDAndTokens
+https://twiki.cern.ch/twiki/bin/viewauth/CMS/IAMTokens
+</pre>
+###### Setting up the Token
+<pre>
+eval `oidc-agent`
+oidc-add bockjoo_xrd
+#export BEARER_TOKEN=$(oidc-token --scope=offline_access --scope=storage.read:/store --scope=storage.modify:/store/temp/user --time=3600 bockjoo_xrd)
+export BEARER_TOKEN=$(oidc-token --scope=offline_access --scope=storage.read:/store --time=3600 bockjoo_xrd)
+</pre>
+
+###### SAM WebDAV Test This will not work until I have the token with the write-scope
+<pre>
+
+# Reference
+(
+     cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+     host=cmsio3.rc.ufl.edu
+     $SAME_SENSOR_HOME/../SE/se_webdav_uf.py -d --print-all -H ${host} -E ${host}:1094 -X $X509_USER_PROXY -N $X509_USER_PROXY_NONCMS -T RD3PCP /store/mc/SAM/  -T WRDEL3PCP /store/temp/user/bockjoo_sam// -I $BEARER_TOKEN -C /dev/null > /opt/cms/services/T2/ops/cmssam/se_webdav.$(echo $host | cut -d. -f1).out
+)
+
+# Podman WebDAV test with a podman 
+(    
+    cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+    host=cmspodman2.rc.ufl.edu
+    $SAME_SENSOR_HOME/../SE/se_webdav_uf_podman.py -d --print-all -H ${host} -E ${host}:1094 -X $X509_USER_PROXY -N $X509_USER_PROXY_NONCMS -T RD3PCP /store/mc/SAM/  -T WRDEL3PCP /store/user/bockjoo// -I $BEARER_TOKEN -C /dev/null  > /opt/cms/services/T2/ops/cmssam/se_webdav.$(echo $host | cut -d. -f1).out ; 
+)
+
+# This runs fine.
+</pre>
+###### Running the latest XRootD SAM tests, fails, but I think it's due to 5.5.5 sever with 5.6.1 client
+<pre>
+export X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
+export X509_USER_PROXY=/home/bockjoo/.cmsuser.proxy
+export X509_USER_PROXY_NONCMS=/home/bockjoo/.griduser.proxy
+export SAME_SENSOR_HOME=/opt/cms/services/T2/ops/cmssam/SiteTests/testjob
+#export PYTHONPATH=$PYTHONPATH:$SAME_SENSOR_HOME/../SRMv2/tests/nap
+# The reference test
+(
+   cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+   host=cmsio3.rc.ufl.edu   
+   $SAME_SENSOR_HOME/../SE/cmssam_xrootd_endpnt_uf.py -H ${host} -P 1094 -S T2_US_Florida -4 -C /dev/null -d --print-all > /opt/cms/services/T2/ops/cmssam/cmssam_xrootd_endpnt_uf.$(echo $host | cut -d. -f1).out
+)
+
+# The WebDAV SAM test on the podman
+(
+   cd $SAME_SENSOR_HOME/../SRMv2/tests/nap
+   host=cmspodman2.rc.ufl.edu   
+   $SAME_SENSOR_HOME/../SE/cmssam_xrootd_endpnt_uf.py -H ${host} -P 1094 -S T2_US_Florida -4 -C /dev/null -d --print-all > /opt/cms/services/T2/ops/cmssam/cmssam_xrootd_endpnt_uf.$(echo $host | cut -d. -f1).out
+)
+
+# This does not run with the xrootd server TLS and errs:
+# XRootDStatus.code=110 "[FATAL] TLS error: resource temporarily unavailable"
+</pre>
+       
 ## [5] A Plan for the Migration from /cmsuf/data(accessible through the regular xrootd) to /cmsuf/podman/data(accessible through the contained xrootd)
 <pre>
 The overall picture of the migration will follow these steps:

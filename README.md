@@ -149,8 +149,17 @@ chown bockjoo:avery /cmsuf/podman
 </pre>
 ### [2-9] Additional Ports for the transition from the regular XRootD to the podman XRootD:
 <pre>
+<b>A. Explanation</b>
 During the transition, both the regular XRootD to the podman XRootD need to coexist.
-And ports 1095 and 3121 need to be open
+<b>B. Puppet </b>
+ports 1095 and 3121 need to be open
+</pre>
+### [2-10] Persistent User to prevent the issue [6-2]
+<pre>
+<b>A. Explanation</b>
+After logging out from machine, Podman containers are stopped for some users. To prevent that, enable lingering for users running containers.
+<b>B. Puppet </b>
+loginctl enable-linger bockjoo
 </pre>
 
 ## [3] T2 Actions: Unprivileged

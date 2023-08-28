@@ -147,6 +147,12 @@ So, /cmsuf/podman needs to be owned by the user who is running podman container 
 mkdir -p /cmsuf/podman
 chown bockjoo:avery /cmsuf/podman
 </pre>
+### [2-9] Additional Ports for the transition from the regular XRootD to the podman XRootD:
+<pre>
+During the transition, both the regular XRootD to the podman XRootD need to coexist.
+And ports 1095 and 3121 need to be open
+</pre>
+
 ## [3] T2 Actions: Unprivileged
 ### [3-1] Checking the podman requirements
 <pre>
@@ -803,14 +809,20 @@ export PYTHONPATH=$PYTHONPATH:$SAME_SENSOR_HOME/../SRMv2/tests/nap
        
 ## [5] A Plan for the Migration from /cmsuf/data(accessible through the regular xrootd) to /cmsuf/podman/data(accessible through the contained xrootd)
 <pre>
+       
+Within Florida, 
+1 Turn cmsio2.rc.ufl.edu into a read-only XRootD
+2 Configure cmsio machines for the XRootD podman containerization 
+3 Two XRootD instances need to be coexist until we migrate all to the podman XRootD
+4 ports 1095 and 3121 need to be open on the cmsio machines for the read-write podman XRootD
+
 The overall picture of the migration will follow these steps:
 1) would disable writes to your RSE/Lustre(T2_US_Florida) storage (A CMS thing)
 2) you would copy all the data from /cmsuf/data/store to /cmsuf/podman/data/store
 3) then update storage.json (PhEDEx/storage.xml and JobConfig/site-local-config.xml) with new /cmsuf/podman/data/store
 4) re-enable writes to your RSE/Lustre storageT2_US_Florida)
-       
-More concretely, turn cmsio2.rc.ufl.edu into a read-only XRootD and 
-cmspodman2.rc.ufl.edu into both read adn write instance of XRootD service       
+
+
 </pre>
 ## [6] Troubleshooting
 ### [6-1] Users in the user namespace (high UID/GID users) should exist to read/write files to /cmsuf/podman/data/store/? area

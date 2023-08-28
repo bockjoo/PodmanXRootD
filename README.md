@@ -1,6 +1,6 @@
 # PodmanXRootD
 
-Bockjoo Kim, August 24, 2023
+Bockjoo Kim, August 28, 2023
 
 
 ## [1] Introduction
@@ -917,4 +917,5 @@ Does this issue exist on a non-VM host? The container in a physical machine did 
 [20] https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#
 [21] https://wiki.archlinux.org/title/Podman#:~:text=After%20logging%20out%20from%20machine,update(1)%20%C2%A7%20EXAMPLES.
 [22] https://github.com/containers/podman/blob/main/troubleshooting.md
+[23] https://docs.oracle.com/en/operating-systems/oracle-linux/podman
 </pre>

@@ -884,3 +884,27 @@ Does this issue exist on a non-VM host? The container in a physical machine did 
 <pre>
        All of the road bocks above should be cleared
 </pre>
+## [References]
+<pre>
+[1] https://docs.podman.io/en/latest/
+[2] https://docs.podman.io/en/latest/Tutorials.html
+[3] https://github.com/containers/podman/blob/main/docs/tutorials/podman_tutorial.md
+[4] https://podman.io/docs/installation
+[5] https://github.com/containers/podman/blob/main/cni/README.md
+[6] https://access.redhat.com/solutions/6161832
+[7] https://github.com/containers/podman/blob/main/test/README.md
+[8] https://github.com/containers/podman/blob/main/README.md#commands
+[9] https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md
+[10] https://opensource.com/article/19/2/how-does-rootless-podman-work
+[11] https://awesome-workshop.github.io/docker-singularity-hats/aio/index.html
+[12] https://www.redhat.com/en/blog/say-hello-buildah-podman-and-skopeo
+[13] https://www.redhat.com/sysadmin/podman-docker-compose
+[14] https://www.redhat.com/sysadmin/compose-podman-pods
+[15] https://www.redhat.com/sysadmin/rootless-podman-makes-sense
+[16] https://www.redhat.com/sysadmin/compose-kubernetes-podman
+[17] How to auto-start rootless pods using systemd : https://access.redhat.com/discussions/5733161
+[18] https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/building_running_and_managing_containers/
+[19] https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container
+[20] https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container#
+[21] https://wiki.archlinux.org/title/Podman#:~:text=After%20logging%20out%20from%20machine,update(1)%20%C2%A7%20EXAMPLES.
+</pre>

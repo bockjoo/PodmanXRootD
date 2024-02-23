@@ -889,6 +889,16 @@ Tried --restart always or nohup but didn't work
 Does this issue exist on a non-VM host? The container in a physical machine did not show this issue.
 </pre>
 
+### [6-3] lsof issue [Feb. 23, 2024]
+<pre>
+lsof does not show the open files for the xrootd process
+</pre>
+
+### [6-4] Shoveler on the podman XRootD [Feb. 23, 2024]
+<pre>
+This is something to test. I hope it's trivial.
+</pre>
+
 ## [7] Testing in the production-like host
 <pre>
        All of the road bocks above should be cleared
